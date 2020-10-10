@@ -1,1 +1,1 @@
-# Empowerment Indexes
+# Construction of Diverse Indexes
