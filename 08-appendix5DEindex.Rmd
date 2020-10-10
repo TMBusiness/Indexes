@@ -1,0 +1,20 @@
+# (APPENDIX) Appendix {-}
+
+#  5DE Index Table {#indextable}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+source("_common.R")
+library(tidyverse)
+```
+
+
+## Women and Men’s Indexes {-}
+```{r message=FALSE, warning=FALSE}
+library(readr)
+# hersWEAI <- read_csv("_data/hers5DEindex.csv", col_names = TRUE)
+hersWEAI <- read_delim("_data/WEAIndexes.csv", col_names = TRUE, delim = "\t")
+kable(hersWEAI)
+
+write_delim(hersWEAI, "_data/hersWEAI.tsv", delim = "\t")
+saveRDS(hersWEAI, "_data/hersWEAI.rds")
+```
+

@@ -1,0 +1,51 @@
+--- 
+knit: "bookdown::render_book"
+site: bookdown::bookdown_site
+output: 
+  bookdown::gitbook:
+    config: 
+      toc:
+       collapse: section
+      search: yes
+      fontsettings:
+        size: 2
+    split_by: chapter
+    includes:
+    df_print: paged
+    always_allow_html: true
+css: [style.css, css/tmbbook.css, toc.css]
+documentclass: book
+bibliography: [library/book.bib, library/packages.bib, library/tmbbooks.bib, library/weai.bib]
+biblio-style: apalike
+link-citations: true
+colorlinks: true
+favicon: "favicon.ico"
+---
+
+
+# Women’s Empowerment in Agriculture Index {-}
+
+<h3><center>Case Study</center></h3>
+
+## The HERS-EA Project in Uganda {-#weaifront}
+
+<h3>Investigator: Prof. Margaret Khaitsa and Colleagues</h3>
+
+Updated: `r Sys.time()`
+
+![Space holder](_figs/USG-TZ-PoultrFutureMarkets.png)
+
+```{r pkgbiblib, include=FALSE}
+# automatically create a bib database for R packages
+knitr::write_bib(c(
+  .packages(), 'base','bookdown', 'knitr','rmarkdown','tidyverse','magrittr','shiny','vegan','funModeling','data.table'
+), 'library/packages.bib')
+```
+
+
+```{r globalsetup, message=FALSE, warning=FALSE, include=FALSE}
+source("_common.R")
+
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+```
+
