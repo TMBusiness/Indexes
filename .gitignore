@@ -41,5 +41,7 @@ vignettes/*.pdf
 *_data/
 *_figs/
 *_docs/
+*docs/
 *library/
 *_book/
+*/REFER/
