@@ -1,0 +1,1233 @@
+# (PART) FiveDE Index {-}
+
+# Identification of the Disempowered
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+source("_common.R")
+
+nonzero <- function(x) sum(x != 0)
+
+load("_data/packages.RData")
+load("_data/globalSetup.RData")
+
+library(tidyverse)
+
+```
+
+## Methodology
+```{block, type="tmbinfo", echo=TRUE}
+
+1. Method 1 focuses on the percentage of empowered women and adequacies among the disempowered. 
+2. Method 2 focuses on the percentage of disempowered women and the percentage of domains in which they lack adequate achievements. 
+
+> Method 2 is commonly used as it is consistent with the M0 measurement (Alkire and Foster 2011).
+
+**Censoring the inadequacies of the empowered**
+
+* The disempowerment cut-off (k=20% ) is the percentage of weighted inadequacies a woman must have to be considered disempowered. 
+* If ciw <= k the score is replaced by 0.
+* Any existing inadequacies are not considered in the “Disempowered headcounts.
+* Now the matrix has new column `ciwk` that contains censored inadequacy score.
+```
+
+
+```{block, type="tmbalert", echo=TRUE}
+
+ ![ci inadequacy score](_figs/FiveDE.png)
+
+* WEAI indicators = 10
+* A-WEAI indicators = 6
+* pro-WEAI indicators = 12
+* HERS-EA Poultry Project indicators = 10
+```
+
+
+<br><hr><br>
+
+## Whole set
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+
+k = 0.2
+
+censored = inadequacies %>%
+  mutate(
+    cik = ifelse(ci<= k, 0, ci),
+    d01k = ifelse(ci<= k, 0, d01),
+    d02k = ifelse(ci<= k, 0, d02),
+    d03k = ifelse(ci<= k, 0, d03),
+    d04k = ifelse(ci<= k, 0, d04),
+    d05k = ifelse(ci<= k, 0, d05),
+    d06k = ifelse(ci<= k, 0, d06),
+    d07k = ifelse(ci<= k, 0, d07),
+    d08k = ifelse(ci<= k, 0, d08),
+    d09k = ifelse(ci<= k, 0, d09),
+    d10k = ifelse(ci<= k, 0, d10)
+)
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate, Disempowered)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+
+
+## Phase 1
+
+<br>
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies %>% filter(Phase == "P1")
+
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate_P1 <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+
+ 
+# Add cik and fill the column with censored values 
+censored <- inadequacies %>% filter(Phase == "P1")
+censored <- censored %>% mutate(cik = ci)
+censored <- censored %>% mutate(d01k = d01)
+censored <- censored %>% mutate(d02k = d02)
+censored <- censored %>% mutate(d03k = d03)
+censored <- censored %>% mutate(d04k = d04)
+censored <- censored %>% mutate(d05k = d05)
+censored <- censored %>% mutate(d06k = d06)
+censored <- censored %>% mutate(d07k = d07)
+censored <- censored %>% mutate(d08k = d08)
+censored <- censored %>% mutate(d09k = d09)
+censored <- censored %>% mutate(d10k = d10)
+
+#Set cutoff for empowerment among inadequacies
+k = 0.2
+
+censored$cik[censored$ci <= k ] <- 0 
+censored$d01k[censored$ci <= k ] <- 0 
+censored$d02k[censored$ci <= k ] <- 0 
+censored$d03k[censored$ci <= k ] <- 0 
+censored$d04k[censored$ci <= k ] <- 0 
+censored$d05k[censored$ci <= k ] <- 0 
+censored$d06k[censored$ci <= k ] <- 0
+censored$d07k[censored$ci <= k ] <- 0 
+censored$d08k[censored$ci <= k ] <- 0 
+censored$d09k[censored$ci <= k ] <- 0 
+censored$d10k[censored$ci <= k ] <- 0 
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered_P1 <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate_P1, Disempowered_P1)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+<br>
+<br>
+
+## Women Phase 1
+<br>
+
+<br>
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies %>% filter(Phase == "P1", Sex == 2)
+
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate_P1F <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+ 
+# Add cik and fill the column with censored values 
+censored <- inadequacies %>% filter(Phase == "P1", Sex == 2)
+censored <- censored %>% mutate(cik = ci)
+censored <- censored %>% mutate(d01k = d01)
+censored <- censored %>% mutate(d02k = d02)
+censored <- censored %>% mutate(d03k = d03)
+censored <- censored %>% mutate(d04k = d04)
+censored <- censored %>% mutate(d05k = d05)
+censored <- censored %>% mutate(d06k = d06)
+censored <- censored %>% mutate(d07k = d07)
+censored <- censored %>% mutate(d08k = d08)
+censored <- censored %>% mutate(d09k = d09)
+censored <- censored %>% mutate(d10k = d10)
+
+#Set cutoff for empowerment among inadequacies
+k = 0.2
+
+censored$cik[censored$ci <= k ] <- 0 
+censored$d01k[censored$ci <= k ] <- 0 
+censored$d02k[censored$ci <= k ] <- 0 
+censored$d03k[censored$ci <= k ] <- 0 
+censored$d04k[censored$ci <= k ] <- 0 
+censored$d05k[censored$ci <= k ] <- 0 
+censored$d06k[censored$ci <= k ] <- 0
+censored$d07k[censored$ci <= k ] <- 0 
+censored$d08k[censored$ci <= k ] <- 0 
+censored$d09k[censored$ci <= k ] <- 0 
+censored$d10k[censored$ci <= k ] <- 0 
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered_P1F <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate_P1F, Disempowered_P1F)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+
+<br>
+<br>
+
+## Men Phase 1
+<br>
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies %>% filter(Phase == "P1", Sex == 1)
+
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate_P1M <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+ 
+# Add cik and fill the column with censored values 
+censored <- inadequacies %>% filter(Phase == "P1", Sex == 1)
+censored <- censored %>% mutate(cik = ci)
+censored <- censored %>% mutate(d01k = d01)
+censored <- censored %>% mutate(d02k = d02)
+censored <- censored %>% mutate(d03k = d03)
+censored <- censored %>% mutate(d04k = d04)
+censored <- censored %>% mutate(d05k = d05)
+censored <- censored %>% mutate(d06k = d06)
+censored <- censored %>% mutate(d07k = d07)
+censored <- censored %>% mutate(d08k = d08)
+censored <- censored %>% mutate(d09k = d09)
+censored <- censored %>% mutate(d10k = d10)
+
+#Set cutoff for empowerment among inadequacies
+k = 0.2
+
+censored$cik[censored$ci <= k ] <- 0 
+censored$d01k[censored$ci <= k ] <- 0 
+censored$d02k[censored$ci <= k ] <- 0 
+censored$d03k[censored$ci <= k ] <- 0 
+censored$d04k[censored$ci <= k ] <- 0 
+censored$d05k[censored$ci <= k ] <- 0 
+censored$d06k[censored$ci <= k ] <- 0
+censored$d07k[censored$ci <= k ] <- 0 
+censored$d08k[censored$ci <= k ] <- 0 
+censored$d09k[censored$ci <= k ] <- 0 
+censored$d10k[censored$ci <= k ] <- 0 
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered_P1M <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate_P1M, Disempowered_P1M)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+<br>
+<hr>
+<br>
+
+
+## Phase 2
+
+<br>
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies %>% filter(Phase == "P2")
+
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate_P2 <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+ 
+# Add cik and fill the column with censored values 
+censored <- inadequacies %>% filter(Phase == "P2")
+censored <- censored %>% mutate(cik = ci)
+censored <- censored %>% mutate(d01k = d01)
+censored <- censored %>% mutate(d02k = d02)
+censored <- censored %>% mutate(d03k = d03)
+censored <- censored %>% mutate(d04k = d04)
+censored <- censored %>% mutate(d05k = d05)
+censored <- censored %>% mutate(d06k = d06)
+censored <- censored %>% mutate(d07k = d07)
+censored <- censored %>% mutate(d08k = d08)
+censored <- censored %>% mutate(d09k = d09)
+censored <- censored %>% mutate(d10k = d10)
+
+#Set cutoff for empowerment among inadequacies
+k = 0.2
+
+censored$cik[censored$ci <= k ] <- 0 
+censored$d01k[censored$ci <= k ] <- 0 
+censored$d02k[censored$ci <= k ] <- 0 
+censored$d03k[censored$ci <= k ] <- 0 
+censored$d04k[censored$ci <= k ] <- 0 
+censored$d05k[censored$ci <= k ] <- 0 
+censored$d06k[censored$ci <= k ] <- 0
+censored$d07k[censored$ci <= k ] <- 0 
+censored$d08k[censored$ci <= k ] <- 0 
+censored$d09k[censored$ci <= k ] <- 0 
+censored$d10k[censored$ci <= k ] <- 0 
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered_P2 <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate_P2, Disempowered_P2)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+<br>
+<br>
+
+## Women Phase 2
+<br>
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies %>% filter(Phase == "P2", Sex == 2)
+
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate_P2F <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+ 
+# Add cik and fill the column with censored values 
+censored <- inadequacies %>% filter(Phase == "P2", Sex == 2)
+censored <- censored %>% mutate(cik = ci)
+censored <- censored %>% mutate(d01k = d01)
+censored <- censored %>% mutate(d02k = d02)
+censored <- censored %>% mutate(d03k = d03)
+censored <- censored %>% mutate(d04k = d04)
+censored <- censored %>% mutate(d05k = d05)
+censored <- censored %>% mutate(d06k = d06)
+censored <- censored %>% mutate(d07k = d07)
+censored <- censored %>% mutate(d08k = d08)
+censored <- censored %>% mutate(d09k = d09)
+censored <- censored %>% mutate(d10k = d10)
+
+#Set cutoff for empowerment among inadequacies
+k = 0.2
+
+censored$cik[censored$ci <= k ] <- 0 
+censored$d01k[censored$ci <= k ] <- 0 
+censored$d02k[censored$ci <= k ] <- 0 
+censored$d03k[censored$ci <= k ] <- 0 
+censored$d04k[censored$ci <= k ] <- 0 
+censored$d05k[censored$ci <= k ] <- 0 
+censored$d06k[censored$ci <= k ] <- 0
+censored$d07k[censored$ci <= k ] <- 0 
+censored$d08k[censored$ci <= k ] <- 0 
+censored$d09k[censored$ci <= k ] <- 0 
+censored$d10k[censored$ci <= k ] <- 0 
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered_P2F <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate_P2F, Disempowered_P2F)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+
+<br>
+<br>
+
+## Men Phase 2
+<br>
+
+### Uncensored Inadequancies
+```{r}
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+uncensored <- inadequacies %>% filter(Phase == "P2", Sex == 1)
+
+len <- uncensored %>% count()
+sum <- sum(uncensored$ci)
+Hn <- sum/len
+# Hn <- mean(uncensored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to uncensored M0\n"
+d01Hn <- mean(uncensored$d01)
+d02Hn <- mean(uncensored$d02)
+d03Hn <- mean(uncensored$d03)
+d04Hn <- mean(uncensored$d04)
+d05Hn <- mean(uncensored$d05)
+d06Hn <- mean(uncensored$d06)
+d07Hn <- mean(uncensored$d07)
+d08Hn <- mean(uncensored$d08)
+d09Hn <- mean(uncensored$d09)
+d10Hn <- mean(uncensored$d10)
+uncensoredM0Index <- d01Hn + d02Hn + d03Hn + d04Hn + d05Hn + d06Hn + d07Hn + d08Hn + d09Hn + d10Hn
+uncensoredFiveDE <- 1-uncensoredM0Index
+
+Inadequate_P2M <- c(d01Hn, d02Hn, d03Hn, d04Hn, d05Hn, d06Hn, d07Hn, d08Hn, d09Hn, d10Hn, uncensoredM0Index, uncensoredFiveDE)
+
+cat("\nVerify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(uncensoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(uncensoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Censoring the Inadequacies
+>Note: A respondent is identified as disempowered if ci > k and empowered if ci ≤ k. 
+> Censoring: If ci <= k the score is replaced by 0.")
+
+```{r}
+library(dplyr)
+inadequacies <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+ 
+# Add cik and fill the column with censored values 
+censored <- inadequacies %>% filter(Phase == "P2", Sex == 1)
+censored <- censored %>% mutate(cik = ci)
+censored <- censored %>% mutate(d01k = d01)
+censored <- censored %>% mutate(d02k = d02)
+censored <- censored %>% mutate(d03k = d03)
+censored <- censored %>% mutate(d04k = d04)
+censored <- censored %>% mutate(d05k = d05)
+censored <- censored %>% mutate(d06k = d06)
+censored <- censored %>% mutate(d07k = d07)
+censored <- censored %>% mutate(d08k = d08)
+censored <- censored %>% mutate(d09k = d09)
+censored <- censored %>% mutate(d10k = d10)
+
+#Set cutoff for empowerment among inadequacies
+k = 0.2
+
+censored$cik[censored$ci <= k ] <- 0 
+censored$d01k[censored$ci <= k ] <- 0 
+censored$d02k[censored$ci <= k ] <- 0 
+censored$d03k[censored$ci <= k ] <- 0 
+censored$d04k[censored$ci <= k ] <- 0 
+censored$d05k[censored$ci <= k ] <- 0 
+censored$d06k[censored$ci <= k ] <- 0
+censored$d07k[censored$ci <= k ] <- 0 
+censored$d08k[censored$ci <= k ] <- 0 
+censored$d09k[censored$ci <= k ] <- 0 
+censored$d10k[censored$ci <= k ] <- 0 
+
+saveRDS(censored, ("_data/censored.rds"))
+write_delim(censored, "_data/censored.csv", delim = ",")
+```
+
+<br>
+<br>
+
+### Identify Disempowered
+```{r}
+censored <- readRDS("_data/censored.rds")
+
+len <- censored %>% count()
+sum <- sum(censored$cik)
+Hn <- sum/len
+# Hn <- mean(censored$ci)
+He <- 1-Hn
+M0 <- Hn
+indexFiveDE <- 1 - M0
+
+#Indicator Contribution to censored M0\n"
+cikHn <- mean(censored$cik)
+d01kHn <- mean(censored$d01k)
+d02kHn <- mean(censored$d02k)
+d03kHn <- mean(censored$d03k)
+d04kHn <- mean(censored$d04k)
+d05kHn <- mean(censored$d05k)
+d06kHn <- mean(censored$d06k)
+d07kHn <- mean(censored$d07k)
+d08kHn <- mean(censored$d08k)
+d09kHn <- mean(censored$d09k)
+d10kHn <- mean(censored$d10k)
+
+censoredM0Index <- d01kHn + d02kHn + d03kHn + d04kHn + d05kHn + d06kHn + d07kHn + d08kHn + d09kHn + d10kHn
+censoredFiveDE <- 1-censoredM0Index
+  
+Disempowered_P2M <- c(d01kHn, d02kHn, d03kHn, d04kHn, d05kHn, d06kHn, d07kHn, d08kHn, d09kHn, d10kHn, censoredM0Index, censoredFiveDE)
+
+cat("Verify: Sum of Indicators M0s equals the overall M0\n")
+paste("IndicatorSum =", round(censoredM0Index, digits = 3), "and overall M0 =", round(M0, digits = 3))
+cat("Status:", ifelse(round(censoredM0Index, digits = 3) == round(M0, digits = 3), "PASSED", "FAILED"))
+
+```
+
+<br>
+<br>
+
+### Tabulation and Plotting
+```{r, fig.cap="Contributions of each indicator to disempowerment"}
+# Indicator <- c("Indicator01", "Indicator02", "Indicator03", "Indicator04", "Indicator05", "Indicator06","Indicator07", "Indicator08", "Indicator09", "Indicator10", "M0", "FiveDE" )
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+HCRatio <- data.frame(Indicator, Inadequate_P2M, Disempowered_P2M)
+tibble(HCRatio)
+```
+
+```{r}
+library(dplyr)
+library(viridis)
+
+p1 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5, color = "#f1f1f1") + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+
+p2 <- HCRatio[1:10,] %>% 
+  gather(key = "variable", value = value, -Indicator) %>% 
+  ggplot(aes(x = variable, y = value, fill = Indicator)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "fill", width = .5, color = "#f1f1f1") +
+  labs(x = "", y = "Relative Contribution", title = "") +
+  scale_y_continuous(labels = scales::percent)
+
+ggpubr::ggarrange(p1, p2, common.legend = TRUE, legend = "right")
+```
+
+<br>
+<hr>
+<br>
+
+## Summary Table
+```{r}
+
+disempowerStats <- data.frame(Inadequate_P2M, Inadequate_P2F, Inadequate_P2, Inadequate_P1M, Inadequate_P1F, Inadequate_P1, Inadequate, Disempowered_P2M, Disempowered_P2F, Disempowered_P2, Disempowered_P1M, Disempowered_P1F, Disempowered_P1, Disempowered)
+
+tibble(disempowerStats)
+saveRDS(disempowerStats, "_data/disempowerStats.rds")
+write_csv(disempowerStats, "_data/disempowerStats.csv")
+
+```
+
+### Indicator data 
+```{r}
+disempowerStats <- readRDS("_data/disempowerStats.rds")
+
+Indicator <- c("Poutry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell or Buy Items", "Belong to Social Group", "Held Leadership Position", "Working Time", "Leisure Time", "M0", "FiveDE" )
+
+Phase <- c("P2", "P2", "P2", "P1", "P1", "P1", "NA", "P2", "P2", "P2", "P1", "P1", "P1", "NA")
+UniqueID <- c("Inadeq_P2M", "Inadeq_P2F", "Inadeq_P2", "Inadeq_P1M", "Inadeq_P1F", "Inadeq_P1", "Inadeq", "Disemp_P2M", "Disemp_P2F", "Disemp_P2", "Disemp_P1M", "Disemp_P1F", "Disemp_P1", "Disemp")
+Sex <- c("Male", "Female", "NA", "Male", "Female", "NA", "NA", "Male", "Female", "NA", "Male", "Female", "NA", "NA")
+Status <- c("Inadequate", "Inadequate", "Inadequate", "Inadequate", "Inadequate", "Inadequate", "Inadequate", "Disempowered", "Disempowered", "Disempowered", "Disempowered", "Disempowered", "Disempowered", "Disempowered")
+
+indicatorDF <- as.data.frame(t(disempowerStats))
+names(indicatorDF) <-  Indicator
+indicatorDF <- indicatorDF %>% mutate(UniqueID = UniqueID)
+indicatorDF <- indicatorDF %>% mutate(Status = Status)
+indicatorDF <- indicatorDF %>% mutate(Phase = Phase)
+indicatorDF <- indicatorDF %>% mutate(Sex = Sex)
+
+tibble(indicatorDF)
+saveRDS(indicatorDF, "_data/indicatorDF.rds")
+write_csv(indicatorDF, "_data/indicatorDF.csv")
+```
+
+### Decomposed data
+```{r}
+fiveDEdf <- indicatorDF %>% 
+  select(UniqueID, Phase, Status, Sex, 1:10) %>% 
+  filter(Sex != "NA") %>%
+  gather(key = "variable", value = value, -UniqueID, -Status, -Phase, -Sex)
+
+tibble(fiveDEdf)
+saveRDS(fiveDEdf, "_data/fiveDEdf.rds")
+write_csv(fiveDEdf, "_data/fiveDEdf.csv")
+
+```
+
+### Plotting
+```{r}
+p1 <- fiveDEdf %>% 
+  ggplot(aes(x = Phase, y = value, fill = variable)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5) + 
+  labs(x = "", y = "Absolute Contribution", title = "") +
+  facet_grid(~ Status)
+p1
+
+p2 <- fiveDEdf %>% 
+  ggplot(aes(x = Sex, y = value, fill = variable)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5) + 
+  labs(x = "", y = "Absolute Contribution", title = "") +
+  facet_grid(~ Status)
+p2
+
+p3 <- fiveDEdf %>% 
+  ggplot(aes(x = Status, y = value, fill = variable)) +
+  theme_bw() +
+  # scale_fill_viridis(discrete = TRUE) +
+  geom_bar(stat = "identity", position = "stack", width = .5) + 
+  labs(x = "", y = "Absolute Contribution", title = "")
+p3
+
+
+```
+

@@ -1,0 +1,262 @@
+# (PART) WEAI Calculation  {-}
+
+# Empowerment Analysis
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+source("_common.R")
+nonzero <- function(x) sum(x != 0)
+
+load("_data/packages.RData")
+load("_data/globalSetup.RData")
+mksurvey <- readRDS("_data/mksurvey.rds")
+mktable3stats <- readRDS("_data/mktable3stats.rds")
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(data.table)
+library(tidyr)
+```
+<br>
+
+## Basic Features
+```{block, type="tmbinfo", echo=TRUE}
+
+![](_figs/hersindicators.png){width=100%}
+
+> HERS-EA Project ten indicator's weights are nested to cover the five WEAI domains.
+```
+
+## HERS-EA Empowerment Indicators
+```{r}
+WEAIdomain <- c("Production", "", "Resources", "", "Income", "", "Leadership", "", "Time", "")
+HERSindicators <- c("Poultry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Allowed to Sell", "Social Group", "Held Position", "Working Time", "Leisure Time")
+Weights <- c(1/10, 1/10, 1/10, 1/10, 1/10, 1/10, 1/10, 1/10, 1/10, 1/10)
+
+weaifeatures <- data.frame(WEAIdomain, HERSindicators, Weights)
+weaifeatures %>%
+  kable("html") %>%
+  kable_styling(font_size = 12, position = "center", full_width = F, bootstrap_options = c("basic"))
+```
+
+
+
+<br>
+
+## Constructing HERS-EA Indicators
+**Censoring the Inadequacies
+```{block, type="tmbinfo", echo=TRUE}
+**Aggregate HERS-EA MK Indicators**
+
+* Replace raw achievement values with:
+  * 1 if an individual has adequate achievements
+  * 0 if an individual has inadequate achievements
+  * NA are auto-generated if the individual’s response is missing
+
+* For each indicator file, create new variable that contains sum of raw achivements of its variables.
+* Make sure the new variable name is informative (Example.: Indicator1, Indicator2, Indicator3, Indicator4, Indicator5, Indicator6 Indicator7, Indicator8 Indicator9, Indicator10).
+
+<br>
+```
+
+<br>
+
+### d1_poultry
+```{r}
+d1data_poultry <- mktable3stats %>% select("Chicken")
+rownames(d1data_poultry) <- mktable3stats$RespondentID
+d1data_poultry$Chicken <- as.numeric(d1data_poultry$Chicken)
+
+d1_poultry <- d1data_poultry 
+d1_poultry <- d1_poultry %>% mutate(d1 = rowSums(d1_poultry, na.rm = TRUE))
+d1_poultry
+
+saveRDS(d1_poultry, "_data/d1_poultry.rds")
+```
+
+<br>
+
+### d2_largeanimals
+```{r}
+d2data_largeanimals <- mktable3stats %>% select("Cattle", "Goats", "Pigs" )
+d2data_largeanimals$Cattle <- as.numeric(d2data_largeanimals$Cattle)
+d2data_largeanimals$Goats <- as.numeric(d2data_largeanimals$Goats)
+d2data_largeanimals$Pigs <- as.numeric(d2data_largeanimals$Pigs)
+
+d2_largeanimals = d2data_largeanimals %>%
+  mutate(d2 = rowSums(d2data_largeanimals[,c("Cattle","Goats","Pigs")], na.rm = TRUE))
+
+d2_largeanimals
+
+saveRDS(d2_largeanimals, "_data/d2_largeanimals.rds")
+
+```
+
+### d3_ownassets
+```{r}
+d3data_ownassets <- mktable3stats %>% select("OwnLand", "ItemFullOwnership")
+
+d3_ownassets <- d3data_ownassets
+d3_ownassets$OwnLand[d3data_ownassets$OwnLand == 1] <- 1 
+d3_ownassets$OwnLand[d3data_ownassets$OwnLand == 2] <- 0 
+d3_ownassets$ItemFullOwnership[d3data_ownassets$ItemFullOwnership == 1] <- 1 
+d3_ownassets$ItemFullOwnership[d3data_ownassets$ItemFullOwnership == 2] <- 0 
+
+d3_ownassets$OwnLand <- as.numeric(d3_ownassets$OwnLand)
+d3_ownassets$ItemFullOwnership <- as.numeric(d3_ownassets$ItemFullOwnership)
+
+d3_ownassets <- d3_ownassets %>% mutate(d3 = rowSums(d3_ownassets, na.rm = TRUE))
+d3_ownassets
+
+d3_ownassets
+
+saveRDS(d3_ownassets, "_data/d3_ownassets.rds")
+
+```
+
+<br>
+
+### d4_assetsonland
+```{r}
+d4data_assetsonland <- mktable3stats %>% select("LandSize", "AssetsOnLand")
+
+d4data_assetsonland$LandSize <- as.numeric(d4data_assetsonland$LandSize)
+d4data_assetsonland$AssetsOnLand <- as.numeric(d4data_assetsonland$AssetsOnLand)
+
+d4_assetsonland = d4data_assetsonland %>%
+  mutate(d4 = rowSums(d4data_assetsonland[,c("LandSize","AssetsOnLand")], na.rm = TRUE))
+
+d4_assetsonland
+
+saveRDS(d4_assetsonland, "_data/d4_assetsonland.rds")
+```
+
+<br>
+
+### d5_earnincome
+```{r}
+d5data_earnincome <- mktable3stats %>% select("EarnIncome", "WorkYouDo", "WhoBuyItems")
+
+d5_earnincome <- d5data_earnincome
+d5_earnincome$EarnIncome[d5data_earnincome$EarnIncome == 1] <- 1 
+d5_earnincome$EarnIncome[d5data_earnincome$EarnIncome == 2] <- 0 
+d5_earnincome$WorkYouDo[d5data_earnincome$WorkYouDo > 0] <- 1 
+d5_earnincome$WhoBuyItems[d5data_earnincome$WhoBuyItems > 0] <- 1 
+
+d5_earnincome$EarnIncome <- as.numeric(d5_earnincome$EarnIncome)
+d5_earnincome$WorkYouDo <- as.numeric(d5_earnincome$WorkYouDo)
+d5_earnincome$WhoBuyItems <- as.numeric(d5_earnincome$WhoBuyItems)
+
+d5_earnincome <- d5_earnincome %>% mutate(d5 = rowSums(d5_earnincome, na.rm = TRUE))
+d5_earnincome
+
+d5_earnincome
+
+saveRDS(d5_earnincome, "_data/d5_earnincome.rds")
+```
+
+<br>
+
+### d6_allowedtosell
+```{r}
+d6data_allowedtosell <- mktable3stats %>% select("AllowedToSell", "MoneySpendDecisions")
+
+d6_allowedtosell <- d6data_allowedtosell
+d6_allowedtosell$AllowedToSell[d6data_allowedtosell$AllowedToSell == 1] <- 1 
+d6_allowedtosell$AllowedToSell[d6data_allowedtosell$AllowedToSell >= 2] <- 0 
+d6_allowedtosell$MoneySpendDecisions[d6data_allowedtosell$MoneySpendDecisions == 1] <- 1 
+d6_allowedtosell$MoneySpendDecisions[d6data_allowedtosell$MoneySpendDecisions >= 2] <- 0 
+
+d6_allowedtosell$AllowedToSell <- as.numeric(d6_allowedtosell$AllowedToSell)
+d6_allowedtosell$MoneySpendDecisions <- as.numeric(d6_allowedtosell$MoneySpendDecisions)
+
+d6_allowedtosell <- d6_allowedtosell %>% mutate(d6 = rowSums(d6_allowedtosell, na.rm = TRUE))
+d6_allowedtosell
+
+d6_allowedtosell
+
+saveRDS(d6_allowedtosell, "_data/d6_allowedtosell.rds")
+```
+
+<br>
+
+### d7_speakinpublic
+```{r}
+d7data_speakinpublic <- mktable3stats %>% select("AllowedTalkInPublic", "TalkedInPublic")
+
+d7_speakinpublic <- d7data_speakinpublic
+d7_speakinpublic$AllowedTalkInPublic[d7data_speakinpublic$AllowedTalkInPublic == 1] <- 1 
+d7_speakinpublic$AllowedTalkInPublic[d7data_speakinpublic$AllowedTalkInPublic >= 2] <- 0 
+d7_speakinpublic$TalkedInPublic[d7data_speakinpublic$TalkedInPublic == 1] <- 1 
+d7_speakinpublic$TalkedInPublic[d7data_speakinpublic$TalkedInPublic >= 2] <- 0 
+
+d7data_speakinpublic$AllowedTalkInPublic <- as.numeric(d7_speakinpublic$AllowedTalkInPublic)
+d7data_speakinpublic$TalkedInPublic <- as.numeric(d7_speakinpublic$TalkedInPublic)
+
+d7_speakinpublic <- d7_speakinpublic %>% mutate(d7 = rowSums(d7_speakinpublic, na.rm = TRUE))
+d7_speakinpublic
+
+saveRDS(d7_speakinpublic, "_data/d7_speakinpublic.rds")
+```
+
+<br>
+
+### d8_leadership
+```{r}
+d8data_leadership <- mktable3stats %>% select("LeadershipPosition", "SocialGroup", "SourcesOfInfo")
+
+d8_leadership <- d8data_leadership
+
+d8_leadership$LeadershipPosition[d8data_leadership$LeadershipPosition == 1] <- 1 
+d8_leadership$LeadershipPosition[d8data_leadership$LeadershipPosition == 2] <- 0 
+d8_leadership$SocialGroup[d8data_leadership$SocialGroup == 1] <- 1 
+d8_leadership$SocialGroup[d8data_leadership$SocialGroup == 2] <- 0 
+d8_leadership$SourcesOfInfo[d8data_leadership$SourcesOfInfo %in% "One"] <- 0 
+d8_leadership$SourcesOfInfo[d8data_leadership$SourcesOfInfo %in% "Two"] <- 1 
+d8_leadership$SourcesOfInfo[d8data_leadership$SourcesOfInfo %in% ">Two"] <- 1
+
+d8_leadership$LeadershipPosition <- as.numeric(d8_leadership$LeadershipPosition)
+d8_leadership$SocialGroup <- as.numeric(d8_leadership$SocialGroup)
+d8_leadership$SourcesOfInfo <- as.numeric(d8_leadership$SourcesOfInfo)
+
+d8_leadership <- d8_leadership %>% mutate(d8 = rowSums(d8_leadership, na.rm = TRUE))
+d8_leadership
+
+saveRDS(d8_leadership, "_data/d8_leadership.rds")
+```
+
+<br>
+
+### d9_workload
+```{r}
+d9data_workload <- mktable3stats %>% select("WorkingTime")
+
+d9_workload <- d9data_workload
+d9_workload$WorkingTime[d1data_poultry$WorkingTime > 1] <- 1 
+d9_workload$WorkingTime[d1data_poultry$WorkingTime == 1] <- 0 
+
+d9_workload$WorkingTime <- as.numeric(d9_workload$WorkingTime)
+
+d9_workload <- d9_workload %>% mutate(d9 = rowSums(d9_workload, na.rm = TRUE))
+d9_workload
+
+saveRDS(d9_workload, "_data/d9_workload.rds")
+```
+
+<br>
+
+### d10_leisuretime
+```{r}
+d10data_leisuretime <- mktable3stats %>% select("HowOftenInLeisure" )
+d10data_leisuretime$HowOftenInLeisure <- as.numeric(d10data_leisuretime$HowOftenInLeisure)
+
+d10_leisuretime <- d10data_leisuretime %>% mutate(d10 = rowSums(d10data_leisuretime, na.rm = TRUE))
+d10_leisuretime
+
+saveRDS(d10_leisuretime, "_data/d10_leisuretime.rds")
+```
+
+
+
+
+

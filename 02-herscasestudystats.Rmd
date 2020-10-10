@@ -1,0 +1,954 @@
+# (PART) Descriptive Statistics {-}
+
+# Case Study
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+source("_common.R")
+library(tidyverse)
+```
+
+## HERS-EA Survey Data
+
+### Variables studied
+```{r message=FALSE, warning=FALSE}
+mksurvey <- as.data.frame(read_csv("_data/surveyresults.csv", col_names = TRUE, skip = 1))
+names(mksurvey)
+
+rownames(mksurvey) <- mksurvey[, 1]
+mksurvey$Sex <- as.character(mksurvey$Sex)
+
+IDs <- mksurvey[, 1:4]
+respondentID <- mksurvey[, c(1,2,4)]
+saveRDS(respondentID,"_data/respondentID.rds")
+
+respondentNAMES <- mksurvey[, c(1, 3)]
+saveRDS(respondentNAMES,"_data/respondentNAMES.rds")
+
+saveRDS(mksurvey, "_data/mksurvey.rds")
+
+```
+
+<br>
+
+### Variables selected for 5DE
+> These variables can be modified by investigators to fit their research purpose.
+
+```{r message=FALSE, warning=FALSE}
+## Generate MK Table3 Data
+library(readr)
+library(dplyr)
+
+mksurvey <- readRDS("_data/mksurvey.rds")
+
+mktable3stats <- mksurvey %>% select(1:4, OwnItemAtHome, Chicken, Cattle, Goats, Pigs, Chicken_, Cattle_, Goats_, Pigs_, ItemFullOwnership, OwnLand, LandSize, AssetsOnLand, EarnIncome, WorkYouDo, WhoBuyItems, AllowedToSell, MoneySpendDecisions, AllowedTalkInPublic, TalkedInPublic, LeadershipPosition, SocialGroup, SourcesOfInfo, WorkYouDo, WorkingTime, HowOftenInLeisure)
+
+mktable3stats <- mksurvey %>% select(1:4, OwnItemAtHome, Chicken, Cattle, Goats, Pigs, Chicken_, Cattle_, Goats_, Pigs_, ItemFullOwnership, OwnLand, LandSize, AssetsOnLand, EarnIncome, WorkYouDo, WhoBuyItems, AllowedToSell, MoneySpendDecisions, AllowedTalkInPublic, TalkedInPublic, LeadershipPosition, SocialGroup, SourcesOfInfo, WorkYouDo, WorkingTime, HowOftenInLeisure)
+
+correctnames <- mksurvey %>% select(1:4, OwnItemAtHome, Chicken, Cattle, Goats, Pigs, ItemFullOwnership, OwnLand, LandSize, AssetsOnLand, EarnIncome, WorkYouDo, WhoBuyItems, AllowedToSell, MoneySpendDecisions, AllowedTalkInPublic, TalkedInPublic, LeadershipPosition, SocialGroup, SourcesOfInfo, WorkYouDo, WorkingTime, HowOftenInLeisure)
+names(correctnames)
+
+saveRDS(mktable3stats, "_data/mktable3stats.rds")
+```
+
+<br>
+
+```{r}
+### Load Table 3
+mktable3stats <- readRDS("_data/mktable3stats.rds")
+
+mktable3stats$RespondentID <- as.character(mktable3stats$RespondentID) 
+mktable3stats$Phase <- as.character(mktable3stats$Phase) 
+mktable3stats$Name <- as.character(mktable3stats$Name) 
+mktable3stats$Sex <- as.character(mktable3stats$Sex) 
+mktable3stats$OwnItemAtHome <- as.character(mktable3stats$OwnItemAtHome) 
+mktable3stats$Chicken <- as.numeric(mktable3stats$Chicken) 
+mktable3stats$Cattle <- as.numeric(mktable3stats$Cattle) 
+mktable3stats$Goats <- as.numeric(mktable3stats$Goats) 
+mktable3stats$Pigs <- as.numeric(mktable3stats$Pigs)
+mktable3stats$Chicken_ <- as.character(mktable3stats$Chicken_) 
+mktable3stats$Cattle_ <- as.character(mktable3stats$Cattle_) 
+mktable3stats$Goats_ <- as.character(mktable3stats$Goats_) 
+mktable3stats$Pigs_ <- as.character(mktable3stats$Pigs_) 
+mktable3stats$ItemFullOwnership <- as.character(mktable3stats$ItemFullOwnership) 
+mktable3stats$OwnLand <- as.character(mktable3stats$OwnLand) 
+mktable3stats$LandSize <- as.character(mktable3stats$LandSize) 
+mktable3stats$AssetsOnLand <- as.character(mktable3stats$AssetsOnLand) 
+mktable3stats$EarnIncome <- as.character(mktable3stats$EarnIncome) 
+mktable3stats$WorkYouDo <- as.character(mktable3stats$WorkYouDo) 
+mktable3stats$WhoBuyItems <- as.character(mktable3stats$WhoBuyItems) 
+mktable3stats$AllowedToSell <- as.character(mktable3stats$AllowedToSell) 
+mktable3stats$MoneySpendDecisions <- as.character(mktable3stats$MoneySpendDecisions) 
+mktable3stats$AllowedTalkInPublic <- as.character(mktable3stats$AllowedTalkInPublic) 
+mktable3stats$TalkedInPublic <- as.character(mktable3stats$TalkedInPublic) 
+mktable3stats$LeadershipPosition <- as.character(mktable3stats$LeadershipPosition) 
+mktable3stats$SocialGroup <- as.character(mktable3stats$SocialGroup) 
+mktable3stats$SourcesOfInfo <- as.character(mktable3stats$SourcesOfInfo) 
+mktable3stats$WorkYouDo <- as.character(mktable3stats$WorkYouDo) 
+mktable3stats$WorkingTime <- as.character(mktable3stats$WorkingTime) 
+mktable3stats$HowOftenInLeisure <- as.character(mktable3stats$HowOftenInLeisure)
+
+mktable3statsP1 <- mktable3stats %>% filter(Phase == "P1")
+mktable3statsP2 <- mktable3stats %>% filter(Phase == "P2")
+
+```
+
+<br>
+<hr>
+
+# Numerical Variables
+> Note that only the production domain has numerical variables that reflect the number of animals kept. It is also worth noting that WEAI is commonly constructed from categorical data.
+
+
+## Descriptive Statistics {#numericalvarsstats}
+Histogram of animals kept
+```{r include=FALSE}
+phase1 <- plot_num(mktable3statsP1)
+phase2 <- plot_num(mktable3statsP2)
+```
+
+```{r fig.height=6, fig.width=10}
+cowplot::plot_grid(phase1, phase2)
+```
+
+<br>
+
+### Distribution of animals kept
+```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+library(funModeling)
+library(tidyr)
+library(ggpubr)
+
+prod4box <- mktable3stats %>% gather(key = Animal, value = value, Chicken, Cattle, Goats, Pigs, -Phase)
+
+p1 <- prod4box %>% 
+  ggplot(aes(x = Phase, y = value, fill = Animal)) +
+  geom_boxplot() + theme_bw() + combosize
+
+p2 <- prod4box %>% 
+  ggplot(aes(x = Phase, y = log(value), fill = Animal)) +
+  geom_boxplot() + theme_bw() + combosize
+
+ggarrange(p1, p2, ncol = 1, common.legend = TRUE, legend = "right")
+```
+
+<br>
+<hr>
+
+
+**Chicken  Summary Stats**
+```{r}
+chickenP1 <- mktable3stats %>% select(RespondentID, Phase, Chicken) %>% filter(Phase == "P1")
+names(chickenP1) <- c("RespondentID_P1", "Phase_P1", "Chicken_P1") 
+chickenP2 <- mktable3stats %>% select(RespondentID, Phase, Chicken) %>% filter(Phase == "P2")
+names(chickenP2) <- c("RespondentID_P2", "Phase_P2", "Chicken_P2") 
+chickenProd <- data.frame(chickenP1, chickenP2)
+
+summary(chickenProd)
+```
+
+Chicken Paired Sample T Test
+```{r}
+t.test(chickenProd$Chicken_P1, chickenP2$Chicken_P2)
+```
+
+
+**Cattle  Summary Stats**
+```{r}
+library(funModeling)
+library(data.table)
+
+cattleP1 <- mktable3stats %>% select(RespondentID, Phase, Cattle) %>% filter(Phase == "P1")
+names(cattleP1) <- c("RespondentID_P1", "Phase_P1", "cattle_P1") 
+cattleP2 <- mktable3stats %>% select(RespondentID, Phase, Cattle) %>% filter(Phase == "P2")
+names(cattleP2) <- c("RespondentID_P2", "Phase_P2", "cattle_P2") 
+cattleProd <- data.frame(cattleP1, cattleP2)
+
+summary(cattleProd)
+
+```
+
+Cattle Paired Sample T Test
+```{r}
+t.test(cattleProd$cattle_P1, cattleP2$cattle_P2)
+```
+
+**Goats  Summary Stats**
+```{r}
+library(dplyr)
+library(data.table)
+
+goatsP1 <- mktable3stats %>% select(RespondentID, Phase, Goats) %>% filter(Phase == "P1")
+names(goatsP1) <- c("RespondentID_P1", "Phase_P1", "Goats_P1") 
+goatsP2 <- mktable3stats %>% select(RespondentID, Phase, Goats) %>% filter(Phase == "P2")
+names(goatsP2) <- c("RespondentID_P2", "Phase_P2", "Goats_P2") 
+goatsProd <- data.frame(goatsP1, goatsP2)
+
+summary(goatsProd)
+```
+
+Goats Paired Sample T Test
+```{r}
+t.test(goatsProd$Goats_P1, goatsProd$Goats_P2)
+```
+
+
+**Pigs  Summary Stats**
+```{r}
+library(dplyr)
+library(data.table)
+
+pigP1 <- mktable3stats %>% select(RespondentID, Phase, Pigs) %>% filter(Phase == "P1")
+names(pigP1) <- c("RespondentID_P1", "Phase_P1", "Pigs_P1") 
+pigP2 <- mktable3stats %>% select(RespondentID, Phase, Pigs) %>% filter(Phase == "P2")
+names(pigP2) <- c("RespondentID_P2", "Phase_P2", "Pigs_P2") 
+pigProd <- data.frame(pigP1, pigP2)
+
+summary(pigProd)
+
+```
+
+Pigs Paired Sample T Test
+```{r}
+t.test(pigProd$Pigs_P1, pigProd$Pigs_P2)
+```
+
+<br>
+<hr>
+
+# Categorical variables
+
+## Descriptive Statistics {#categoricalvarsstats}
+### Production Domain
+
+#### Chicken
+
+
+```{r}
+chickP1 <- freq(mktable3statsP1, input = "Chicken_", plot = FALSE, na.rm = FALSE)
+names(chickP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+chickP2 <- freq(mktable3statsP2, input = "Chicken_", plot = FALSE, na.rm = FALSE)
+names(chickP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(chickP1, chickP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+Chicken <- c("Yes", "Unknown")
+
+chickenDF <- data.frame(Chicken, Phase1, Phase2, Pvalue)
+
+kable(chickenDF)
+```
+
+#### Cattle
+
+
+```{r}
+cattleP1 <- freq(mktable3statsP1, input = "Cattle_", plot = FALSE, na.rm = FALSE)
+names(cattleP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+cattleP2 <- freq(mktable3statsP2, input = "Cattle_", plot = FALSE, na.rm = FALSE)
+names(cattleP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(cattleP1, cattleP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+Cattle <- c("Yes", "Unknown")
+
+cattleDF <- data.frame(Cattle, Phase1, Phase2, Pvalue)
+
+kable(cattleDF)
+```
+
+
+#### Goats
+
+
+```{r}
+goatsP1 <- freq(mktable3statsP1, input = "Goats_", plot = FALSE, na.rm = FALSE)
+names(goatsP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+goatsP2 <- freq(mktable3statsP2, input = "Goats_", plot = FALSE, na.rm = FALSE)
+names(goatsP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(goatsP1, goatsP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+Goats <- c("Yes", "Unknown")
+
+goatsDF <- data.frame(Goats, Phase1, Phase2, Pvalue)
+
+kable(goatsDF)
+```
+
+
+#### Pigs
+
+
+```{r}
+pigsP1 <- freq(mktable3statsP1, input = "Pigs_", plot = FALSE, na.rm = FALSE)
+names(pigsP1)[2:4] <- c("P1", "percentageP1","cumulative_percP1")
+
+pigsP2 <- freq(mktable3statsP2, input = "Pigs_", plot = FALSE, na.rm = FALSE)
+names(pigsP2)[2:4] <- c("P2", "percentageP2","cumulative_percP2")
+merged <- merge(pigsP1, pigsP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(P1, P2)
+dimnames(chisqset) <- list(results = c("Yes", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+Pigs <- c("Yes", "Unknown")
+
+pigsDF <- data.frame(Pigs, Phase1, Phase2, Pvalue)
+
+kable(pigsDF)
+```
+
+
+<br>
+<hr>
+
+### Resources Domain
+
+#### Own land
+
+
+```{r}
+landP1 <- freq(mktable3statsP1, input = "OwnLand", plot = FALSE, na.rm = FALSE)
+names(landP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+landP2 <- freq(mktable3statsP2, input = "OwnLand", plot = FALSE, na.rm = FALSE)
+names(landP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(landP1, landP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "No", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+OwnLand <- c("Yes", "No", "Unknown")
+
+ownlandDF <- data.frame(OwnLand, Phase1, Phase2, Pvalue)
+
+kable(ownlandDF)
+```
+
+
+<br>
+
+
+#### Land size
+
+
+```{r}
+sizeP1 <- freq(mktable3statsP1, input = "LandSize", plot = FALSE, na.rm = FALSE)
+names(sizeP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+sizeP2 <- freq(mktable3statsP2, input = "LandSize", plot = FALSE, na.rm = FALSE)
+names(sizeP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(sizeP1, sizeP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("≤1 acre", "2-5 acres", "Unknown", "5-10 acres", ">10 acres"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+LandSize <-c("≤1 acre", "2-5 acres", "Unknown", "5-10 acres", ">10 acres")
+
+landsizeDF <- data.frame(LandSize, Phase1, Phase2, Pvalue)
+
+kable(landsizeDF)
+```
+
+#### Assets on land
+
+
+```{r}
+assetsP1 <- freq(mktable3statsP1, input = "AssetsOnLand", plot = FALSE, na.rm = FALSE)
+names(assetsP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+assetsP2 <- freq(mktable3statsP2, input = "AssetsOnLand", plot = FALSE, na.rm = FALSE)
+names(assetsP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(assetsP1, assetsP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Perrenial Crops", "Animals", "Unknown", "Trees"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+AssetsOnLand <- c("Perrenial Crops", "Animals", "Unknown", "Trees")
+
+assetsDF <- data.frame(AssetsOnLand, Phase1, Phase2, Pvalue)
+
+kable(assetsDF)
+```
+
+<br>
+<hr>
+
+### Income Domain
+
+#### Earn Income
+
+
+```{r}
+earnincomeP1 <- freq(mktable3statsP1, input = "EarnIncome", plot = FALSE, na.rm = FALSE)
+names(earnincomeP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+earnincomeP2 <- freq(mktable3statsP2, input = "EarnIncome", plot = FALSE, na.rm = FALSE)
+names(earnincomeP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(earnincomeP1, earnincomeP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "Unknown", "No"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+EarnIncome <-  c("Yes", "Unknown", "No")
+
+earnincomeDF <- data.frame(EarnIncome, Phase1, Phase2, Pvalue)
+
+kable(earnincomeDF)
+```
+
+
+
+#### Source of Income
+
+
+```{r}
+workyoudoP1 <- freq(mktable3statsP1, input = "WorkYouDo", plot = FALSE, na.rm = FALSE)
+names(workyoudoP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+workyoudoP2 <- freq(mktable3statsP2, input = "WorkYouDo", plot = FALSE, na.rm = FALSE)
+names(workyoudoP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(workyoudoP1, workyoudoP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Sell produce", "Home-based Business", "Unknown", "Homework", "Salary"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+WorkYouDo <-  c("Sell produce", "Home-based Business", "Unknown", "Homework", "Salary")
+
+workyoudoDF <- data.frame(WorkYouDo, Phase1, Phase2, Pvalue)
+
+kable(workyoudoDF)
+```
+
+
+#### Who buys items at home
+
+
+```{r}
+whobuyP1 <- freq(mktable3statsP1, input = "WhoBuyItems", plot = FALSE, na.rm = FALSE)
+names(whobuyP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+whobuyP2 <- freq(mktable3statsP2, input = "WhoBuyItems", plot = FALSE, na.rm = FALSE)
+names(whobuyP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(whobuyP1, whobuyP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Me",  "My spouse", "Unknown", "Both on Consultation", "Other (sponsor, children, etc."), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+WhoBuyItems <-  c("Me",  "My spouse", "Unknown", "Both on Consultation", "Other (sponsor, children, etc.")
+
+whobuyDF <- data.frame(WhoBuyItems, Phase1, Phase2, Pvalue)
+
+kable(whobuyDF)
+```
+
+
+
+#### Allowed to sell or buy
+
+
+```{r}
+allowedtobuyP1 <- freq(mktable3statsP1, input = "AllowedToSell", plot = FALSE, na.rm = FALSE)
+names(allowedtobuyP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+allowedtobuyP2 <- freq(mktable3statsP2, input = "AllowedToSell", plot = FALSE, na.rm = FALSE)
+names(allowedtobuyP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(allowedtobuyP1, allowedtobuyP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Me", "Both on Consultation",  "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+AllowedToBuyOrSell <-  c("Me", "Both on Consultation", "Unknown")
+
+allowedtobuyDF <- data.frame(AllowedToBuyOrSell, Phase1, Phase2, Pvalue)
+
+kable(allowedtobuyDF)
+```
+
+
+#### Who decides how to spend
+
+
+```{r}
+decidetospendP1 <- freq(mktable3statsP1, input = "MoneySpendDecisions", plot = FALSE, na.rm = FALSE)
+names(decidetospendP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+decidetospendP2 <- freq(mktable3statsP2, input = "MoneySpendDecisions", plot = FALSE, na.rm = FALSE)
+names(decidetospendP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(decidetospendP1, decidetospendP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Me", "Other",  "My spouse", "Unknown", "Both on Consultation"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+MoneySpendDecisions  <-  c("Me", "Other",  "My spouse", "Unknown", "Both on Consultation")
+
+decidetospendDF <- data.frame(MoneySpendDecisions, Phase1, Phase2, Pvalue)
+
+kable(decidetospendDF)
+```
+
+
+### Leadership
+
+#### Allowed to speak in public
+
+```{r}
+allowedtospeakinpublicP1 <- freq(mktable3statsP1, input = "AllowedTalkInPublic", plot = FALSE, na.rm = FALSE)
+names(allowedtospeakinpublicP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+allowedtospeakinpublicP2 <- freq(mktable3statsP2, input = "AllowedTalkInPublic", plot = FALSE, na.rm = FALSE)
+names(allowedtospeakinpublicP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(allowedtospeakinpublicP1, allowedtospeakinpublicP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "Unknown",  "No"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+AllowedTalkInPublic  <-  c("Yes", "Unknown",  "No")
+
+allowedtospeakinpublicDF <- data.frame(AllowedTalkInPublic, Phase1, Phase2, Pvalue)
+
+kable(allowedtospeakinpublicDF)
+```
+
+#### Everspoken in public
+
+```{r}
+everspokeninpublicP1 <- freq(mktable3statsP1, input = "TalkedInPublic", plot = FALSE, na.rm = FALSE)
+names(everspokeninpublicP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+everspokeninpublicP2 <- freq(mktable3statsP2, input = "TalkedInPublic", plot = FALSE, na.rm = FALSE)
+names(everspokeninpublicP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(everspokeninpublicP1, everspokeninpublicP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "No",  "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+TalkedInPublic  <-  c("Yes", "No",  "Unknown")
+
+everspokeninpublicDF <- data.frame(TalkedInPublic, Phase1, Phase2, Pvalue)
+
+kable(everspokeninpublicDF)
+```
+
+#### Held Leadership position
+
+```{r}
+leadershippositionP1 <- freq(mktable3statsP1, input = "LeadershipPosition", plot = FALSE, na.rm = FALSE)
+names(leadershippositionP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+leadershippositionP2 <- freq(mktable3statsP2, input = "LeadershipPosition", plot = FALSE, na.rm = FALSE)
+names(leadershippositionP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(leadershippositionP1, leadershippositionP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "No",  "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+LeadershipPosition  <-  c("Yes", "No",  "Unknown")
+
+leadershippositionDF <- data.frame(LeadershipPosition, Phase1, Phase2, Pvalue)
+
+kable(leadershippositionDF)
+```
+
+#### Belong to social groups
+
+```{r}
+socialgroupP1 <- freq(mktable3statsP1, input = "SocialGroup", plot = FALSE, na.rm = FALSE)
+names(socialgroupP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+socialgroupP2 <- freq(mktable3statsP2, input = "SocialGroup", plot = FALSE, na.rm = FALSE)
+names(socialgroupP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(socialgroupP1, socialgroupP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "No",  "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+SocialGroup  <-  c("Yes", "No",  "Unknown")
+
+socialgroupDF <- data.frame(SocialGroup, Phase1, Phase2, Pvalue)
+
+kable(socialgroupDF)
+```
+
+#### Sources of Information
+
+```{r}
+sourcesinfoP1 <- freq(mktable3statsP1, input = "SourcesOfInfo", plot = FALSE, na.rm = FALSE)
+names(sourcesinfoP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+sourcesinfoP2 <- freq(mktable3statsP2, input = "SourcesOfInfo", plot = FALSE, na.rm = FALSE)
+names(sourcesinfoP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(sourcesinfoP1, sourcesinfoP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("One", "Two",  ">Two",  "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+SourcesOfInfo  <-  c("One", "Two",  ">Two",  "Unknown")
+
+sourcesinfoDF <- data.frame(SourcesOfInfo, Phase1, Phase2, Pvalue)
+
+kable(sourcesinfoDF)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Time
+
+#### Type of work or job
+
+```{r}
+workyoudoP1 <- freq(mktable3statsP1, input = "WorkYouDo", plot = FALSE, na.rm = FALSE)
+names(workyoudoP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+workyoudoP2 <- freq(mktable3statsP2, input = "WorkYouDo", plot = FALSE, na.rm = FALSE)
+names(workyoudoP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(workyoudoP1, workyoudoP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Homework", "Sell produce", "Home-based Business", "Salary", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+WorkYouDo <-  c("Homework", "Sell produce", "Home-based Business", "Salary", "Unknown")
+
+workyoudoDF <- data.frame(WorkYouDo, Phase1, Phase2, Pvalue)
+
+kable(workyoudoDF)
+```
+
+
+#### Working time
+```{r}
+workingtimeP1 <- freq(mktable3statsP1, input = "WorkingTime", plot = FALSE, na.rm = FALSE)
+names(workingtimeP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+workingtimeP2 <- freq(mktable3statsP2, input = "WorkingTime", plot = FALSE, na.rm = FALSE)
+names(workingtimeP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(workingtimeP1, workingtimeP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Morning to midday", "Morning to evening",  "Unknown", "Other"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+WorkingTime  <-  c("Morning to midday", "Morning to evening",  "Unknown", "Other")
+
+workingtimeDF <- data.frame(WorkingTime, Phase1, Phase2, Pvalue)
+
+kable(workingtimeDF)
+```
+
+#### Belong to social groups
+
+```{r}
+socialgroupP1 <- freq(mktable3statsP1, input = "SocialGroup", plot = FALSE, na.rm = FALSE)
+names(socialgroupP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+socialgroupP2 <- freq(mktable3statsP2, input = "SocialGroup", plot = FALSE, na.rm = FALSE)
+names(socialgroupP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(socialgroupP1, socialgroupP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("Yes", "No",  "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+SocialGroup  <-  c("Yes", "No",  "Unknown")
+
+socialgroupDF <- data.frame(SocialGroup, Phase1, Phase2, Pvalue)
+
+kable(socialgroupDF)
+```
+
+#### Leisure time
+
+```{r}
+leisureP1 <- mktable3statsP1 %>% select(RespondentID, Phase, Sex, HowOftenInLeisure)
+leisureP1$HowOftenInLeisure[leisureP1$HowOftenInLeisure <=1] <- "≤ 1 hour/day" 
+leisureP1$HowOftenInLeisure[leisureP1$HowOftenInLeisure ==2] <- "2 hours/day" 
+leisureP1$HowOftenInLeisure[leisureP1$HowOftenInLeisure >=3] <- "≥ 3 hours/day" 
+leisureP1$HowOftenInLeisure[leisureP1$HowOftenInLeisure >=3] <- "≥ 3 hours/day" 
+leisureP1$HowOftenInLeisure[leisureP1$HowOftenInLeisure ==24] <- "≥ 3 hours/day" 
+
+leisureP2 <- mktable3statsP2 %>% select(RespondentID, Phase, Sex, HowOftenInLeisure)
+leisureP2$HowOftenInLeisure[leisureP2$HowOftenInLeisure <=1] <- "≤ 1 hour/day" 
+leisureP2$HowOftenInLeisure[leisureP2$HowOftenInLeisure ==2] <- "2 hours/day" 
+leisureP2$HowOftenInLeisure[leisureP2$HowOftenInLeisure >=3] <- "≥ 3 hours/day" 
+leisureP2$HowOftenInLeisure[leisureP2$HowOftenInLeisure == 24] <- "≥ 3 hours/day" 
+
+leisuretimeP1 <- freq(leisureP1, input = "HowOftenInLeisure", plot = FALSE, na.rm = FALSE)
+names(leisuretimeP1)[2:4] <- c("frequencyP1", "percentageP1","cumulative_percP1")
+
+leisuretimeP2 <- freq(leisureP2, input = "HowOftenInLeisure", plot = FALSE, na.rm = FALSE)
+names(leisuretimeP2)[2:4] <- c("frequencyP2", "percentageP2","cumulative_percP2")
+merged <- merge(leisuretimeP1, leisuretimeP2, all = TRUE, sort = FALSE)
+
+# merged
+
+```
+
+<br> 
+
+*Pearson's Chi-squared test*
+```{r}
+chisqset <- merged %>% select(frequencyP1, frequencyP2)
+dimnames(chisqset) <- list(results = c("≥ 3 hours/day", "≤ 1 hour/day", "2 hours/day", "Unknown"), results = c("P1","P2"))
+
+Phase1 = chisqset$P1
+Phase2 = chisqset$P2
+Pvalue = (chisq.test(chisqset))$p.value
+HowOftenInLeisure  <-  c("≥ 3 hours/day", "≤ 1 hour/day", "2 hours/day", "Unknown")
+
+leisuretimeDF <- data.frame(HowOftenInLeisure, Phase1, Phase2, Pvalue)
+
+kable(leisuretimeDF)
+```
+
+<br>
+<hr>
+
+## Summary Statistics (MKTable3)
+```{r message=FALSE, warning=FALSE}
+library(readr)
+mktable3stats4pub <- read_delim("_data/tmbtable3stats.csv", col_names = TRUE, delim = "\t", skip = 1)
+mktable3stats4pub[is.na(mktable3stats4pub)] <- ""
+mktable3stats4pub
+
+write_csv(mktable3stats4pub, "_data/mktable3stats4pub.csv")
+saveRDS(mktable3stats4pub, "_data/mktable3stats4pub.rds")
+```

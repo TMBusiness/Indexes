@@ -1,0 +1,192 @@
+
+# Indicator Matrix
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+source("_common.R")
+nonzero <- function(x) sum(x != 0)
+
+load("_data/packages.RData")
+load("_data/globalSetup.RData")
+mktable3stats <- readRDS("_data/mktable3stats.rds")
+
+d01_poultry <- readRDS("_data/d1_poultry.rds")
+d02_largeanimals <- readRDS("_data/d2_largeanimals.rds")
+d03_ownassets <- readRDS("_data/d3_ownassets.rds")
+d04_assetsonland <- readRDS("_data/d4_assetsonland.rds")
+d05_earnincome <- readRDS("_data/d5_earnincome.rds")
+d06_allowedtosell <- readRDS("_data/d6_allowedtosell.rds")
+d07_speakinpublic <- readRDS("_data/d7_speakinpublic.rds")
+d08_leadership <- readRDS("_data/d8_leadership.rds")
+d09_workload <- readRDS("_data/d9_workload.rds")
+d10_leisuretime <- readRDS("_data/d10_leisuretime.rds")
+```
+
+
+## Achievement Across Indicators
+
+```{r}
+indicatormatrix <- cbind(d01_poultry$d1, d02_largeanimals$d2, d03_ownassets$d3, d04_assetsonland$d4, d05_earnincome$d5, d06_allowedtosell$d6, d07_speakinpublic$d7, d08_leadership$d8, d09_workload$d9, d10_leisuretime$d10)
+colnames(indicatormatrix) <- c("d01", "d02", "d03", "d04", "d05", "d06", "d07", "d08", "d09", "d10")
+rownames(indicatormatrix) <- rownames(mktable3stats)
+
+indicatormatrix <- as.data.frame(indicatormatrix)
+cat("\n")
+cat("Dimension of achievement matrix is", length(rownames(indicatormatrix)), "respondents and ", length(colnames(indicatormatrix)), "indicators (",length(rownames(indicatormatrix)), "x", length(colnames(indicatormatrix)),")")
+
+cat("\n")
+cat("Data Structure\n")
+indicatormatrix
+
+saveRDS(indicatormatrix, "_data/indicatormatrix.rds")
+
+```
+
+<br>
+
+```{block, type="tmbinfo", echo=TRUE}
+**Recall**: The indicator matrix is constructed by aggregating sub-indicator's achievements.
+
+### Observation {-}
+* Mattrix size is 158 x 10.
+* May include nonresponses across all ten indicator in either survey phase.
+* Next: We need to clean this data to retain the respondents who had at least one response in at least one indicator.
+```
+
+<br>
+
+## Responses Matrix
+
+```{r}
+library(tidyverse)
+
+indicatormatrix <- readRDS("_data/indicatormatrix.rds")
+respondentID <- readRDS("_data/respondentID.rds")
+
+# For the purposes of cleaning only
+indicatormatrixwsum <- indicatormatrix
+indicatormatrixwsum$Sum <- rowSums(indicatormatrix)
+saveRDS(indicatormatrixwsum, "_data/indicatormatrixwsum.rds")
+
+indicatormatrixwsumwvar <- cbind(respondentID, indicatormatrixwsum)
+saveRDS(indicatormatrixwsumwvar, "_data/indicatormatrixwsumwvar.rds")
+
+indicatormatrixwsumtidy <- indicatormatrixwsumwvar %>% filter(Sum > 0)
+saveRDS(indicatormatrixwsumtidy, "_data/indicatormatrixwsumtidy.rds")
+
+tidyID <- indicatormatrixwsumtidy[, c(1:3)]
+saveRDS(tidyID, "_data/tidyID.rds")
+
+cat("Total Responses =", length(indicatormatrixwsumtidy$RespondentID))
+indicatormatrixtidy <- indicatormatrixwsumtidy[, -c(1:3, 14)]
+indicatormatrixtidy
+
+saveRDS(indicatormatrixtidy, "_data/indicatormatrixtidy.rds")
+
+```
+
+<br>
+
+## Nonresponses Matrix
+```{r}
+indicatoruntidy <- indicatormatrixwsumwvar %>% filter(Sum == 0)
+
+untidyID <- indicatoruntidy[, c(1:3)]
+saveRDS(untidyID, "_data/untidyID.rds")
+
+cat("Total Nonresponses =", length(indicatoruntidy$RespondentID))
+indicatormatrixuntidy <- indicatoruntidy
+indicatormatrixuntidy
+
+saveRDS(indicatormatrixuntidy, "_data/indicatormatrixuntidy.rds")
+
+```
+
+
+<br>
+
+## Response Proportion
+```{r fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+
+indicatormatrixwsumwvar <- readRDS("_data/indicatormatrixwsumwvar.rds")
+
+respP1 <- indicatormatrixwsumwvar %>% filter(Phase == "P1", Sum > 0)
+countrespP1 <- length(respP1$RespondentID)
+nonrespP1 <- indicatormatrixwsumwvar %>% filter(Phase == "P1", Sum == 0)
+countnonrespP1 <- length(nonrespP1$RespondentID)
+
+respP2 <- indicatormatrixwsumwvar %>% filter(Phase == "P2", Sum > 0)
+countrespP2 <- length(respP2$RespondentID)
+nonrespP2 <- indicatormatrixwsumwvar %>% filter(Phase == "P2", Sum == 0)
+countnonrespP2 <- length(nonrespP2$RespondentID)
+
+
+dfP1 <- data.frame(
+variable <- c("One or more Responses", "Nonresponse (to be removed)"),
+value = c(countrespP1, countnonrespP1))
+
+title1 <- paste("\nPhase One:", countrespP1, "Responses vs", countnonrespP1, "Nonresponses")
+p1 <- dfP1 %>% 
+ggplot(aes(x = "", y = value, fill = variable)) +
+  geom_col(width = 1) +
+  scale_fill_manual(values = c("purple", "green")) +
+  coord_polar("y", start = pi/10) +
+  labs(title = title1, fill = "Response") + noxtitle + noxticks + noxlabels +  noytitle + noyticks + noylabels
+
+dfP2 <- data.frame(
+variable <- c("One or more Responses", "Nonresponse (to be removed)"),
+value = c(countrespP2, countnonrespP2))
+
+
+title2 <- paste("\nPhase Two:", countrespP2, "Responses vs", countnonrespP2, "Nonresponses")
+p2 <- dfP2 %>% 
+ggplot(aes(x = "", y = value, fill = variable)) +
+  geom_col(width = 1) +
+  scale_fill_manual(values = c("purple", "green")) +
+  coord_polar("y", start = pi/10) +
+  labs(title = title2, fill = "Response") + noxtitle + noxticks + noxlabels +  noytitle + noyticks + noylabels
+
+ggpubr::ggarrange(p1, p2, nrow = 2, ncol = 1)
+
+```
+
+
+
+<br>
+
+## Individual's Adequacy
+* This is an interactive heatmap, which shows the respondent's values for each indicator (d1 through d6).
+* Mouseover to see the indicator, respondent ID, and a numerical value showing a sub-indicator count within the indicator.
+* You can zoom, hover, pan, and even export a portion of the plot to your computer. 
+* Note that the last column shows total individual achievement in all indicators.
+
+```{r fig.height=15}
+library(tidyverse)
+library(hrbrthemes)
+library(viridis)
+library(plotly)
+library(d3heatmap)
+library(reshape2)
+
+indicatormatrixwsumtidy <- readRDS("_data/indicatormatrixwsumtidy.rds")
+
+mat1 <- as.matrix(indicatormatrixwsumtidy[, -c(1:3)])
+mat1.m <- melt(mat1)
+
+colnames(mat1.m) <- c("RespondentID", "Indicator", "Value")
+
+p1 <- ggplot(mat1.m, aes(x=Indicator, y=RespondentID, fill=Value)) + 
+  geom_tile(mapping = NULL, data = NULL, stat = "identity",
+  position = "identity", na.rm = TRUE,inherit.aes = TRUE) +
+  labs(title = "", x="Indicator ID", y="Respondent ID", "Value") 
+
+p1 <- p1 + scale_fill_viridis()
+
+ggplotly(p1)
+```
+
+
+
+
+
+

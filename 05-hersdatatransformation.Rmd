@@ -1,0 +1,477 @@
+# (PART) Data Transformation {-}
+
+# Data Transformation
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+source("_common.R")
+
+nonzero <- function(x) sum(x != 0)
+
+load("_data/packages.RData")
+load("_data/globalSetup.RData")
+
+```
+
+<br>
+
+![](_figs/adequacycutoffs.png){width=100%}
+
+<br>
+
+## Weights and Cutoffs
+
+>Hypothetical cutoffs for the HERS survey project. You can adjust the cutoff as you please.
+
+```{r }
+Indicator <- c("d01", "d02", "d03", "d04", "d05", "d06", "d07", "d08", "d09", "d10")
+Name <- c("Poultry Production", "Livestock Production", "Land Ownership", "Assets on Land", "Earn Income", "Sell or Buy Items", "In Social Grroup", "Leadership Position", "Working Time", "Leisure Time" )
+
+Weights <- c("w01 = 1/10", "w02 = 1/10", "w03 = 1/10", "w04 = 1/10", "w05 = 1/10", "w06 = 1/10", "w07 = 1/10", "w08 = 1/10", "w09 = 1/10", "w10 = 1/10")
+InadequacyIf <- c("z01 = 10", "z02 = 2", "z03 = 1", "z04 = 2", "z05 = 2", "z06 = 1", "z07 = 2", "z08 = 1", "z09 = 1", "z10 = 2")
+
+indicatorcutoffs <- data.frame(Indicator, Name, Weights, InadequacyIf)
+kable(indicatorcutoffs)
+```
+<br>
+<br>
+
+## Adequacy Matrix
+```{block, type="tmbinfo", echo = TRUE}
+### Procedure [@Alkire2013]
+
+* Compare the respondent’s responses to the relevant inadequacy cutoffs (z01-z10).
+* Aggregate the adequacies across indicators, applying the relevant aggregation rule.
+* Code with:
+  * 1 if an respondent has adequate achievements
+  * 0 if an respondent has inadequate achievements
+  * NAs are auto-generated if the respondent’s response is missing
+
+* Save as new respondent-level data file as all_indicators.rds (.RDS is a format for R dataset)
+```
+
+<br>
+
+### Unweighted matrix
+
+**Cutoff objects**
+```{r, echo=TRUE}
+z01 = 5
+z02 = 2
+z03 = 1
+z04 = 2
+z05 = 2
+z06 = 1
+z07 = 2
+z08 = 1
+z09 = 1
+z10 = 2
+```
+
+### Binary Transformation
+```{r}
+library(dplyr)
+
+indicatormatrixtidy <- readRDS("_data/indicatormatrixtidy.rds")
+all_indicators = indicatormatrixtidy %>%
+  mutate(
+    d01 = ifelse(d01 >= z01, 1, 0),
+    d02 = ifelse(d02 >= z02, 1, 0),
+    d03 = ifelse(d03 >= z03, 1, 0),
+    d04 = ifelse(d04 >= z04, 1, 0),
+    d05 = ifelse(d05 >= z05, 1, 0),
+    d06 = ifelse(d06 >= z06, 1, 0),
+    d07 = ifelse(d07 >= z07, 1, 0),
+    d08 = ifelse(d08 >= z08, 1, 0),
+    d09 = ifelse(d09 >= z09, 1, 0),
+    d10 = ifelse(d10 >= z10, 1, 0)
+)
+
+tibble(all_indicators)
+
+saveRDS(all_indicators, "_data/all_indicators.rds")
+
+```
+
+<br>
+
+###  Aggregated unweighted adequacy
+> Note that the aggregated values are in column `ei`
+
+```{r}
+all_indicators <- readRDS("_data/all_indicators.rds")
+
+all_indicators_ei <- all_indicators
+all_indicators_ei$ei <- rowSums(all_indicators)
+all_indicators_ei
+
+saveRDS(all_indicators_ei, "_data/all_indicators_ei.rds")
+```
+
+<br>
+<r>
+
+### Weighted matrix
+* Constructed using the A-WEAI indicator weights.
+
+**Weight objects**
+```{r, echo=TRUE}
+w01 = 1/10		
+w02 = 1/10		
+w03 = 1/10		
+w04 = 1/10		
+w05 = 1/10		
+w06 = 1/10		
+w07 = 1/10		
+w08 = 1/10		
+w09 = 1/10		
+w10 = 1/10
+```
+
+
+```{r}
+all_indicators <- readRDS("_data/all_indicators.rds")
+all_wted_indicators <- all_indicators
+
+#Build all_wted_indicators.rds
+all_wted_indicators$d01 <- (all_indicators$d01) * w01
+all_wted_indicators$d02 <- (all_indicators$d02) * w02
+all_wted_indicators$d03 <- (all_indicators$d03) * w03
+all_wted_indicators$d04 <- (all_indicators$d04) * w04
+all_wted_indicators$d05 <- (all_indicators$d05) * w05
+all_wted_indicators$d06 <- (all_indicators$d06) * w06
+all_wted_indicators$d07 <- (all_indicators$d03) * w07
+all_wted_indicators$d08 <- (all_indicators$d04) * w08
+all_wted_indicators$d09 <- (all_indicators$d05) * w09
+all_wted_indicators$d10 <- (all_indicators$d06) * w10
+
+all_wted_indicators$d01 <- as.numeric(all_wted_indicators$d01)
+all_wted_indicators$d02 <- as.numeric(all_wted_indicators$d02)
+all_wted_indicators$d03 <- as.numeric(all_wted_indicators$d03)
+all_wted_indicators$d04 <- as.numeric(all_wted_indicators$d04)
+all_wted_indicators$d05 <- as.numeric(all_wted_indicators$d05)
+all_wted_indicators$d06 <- as.numeric(all_wted_indicators$d06)
+all_wted_indicators$d07 <- as.numeric(all_wted_indicators$d07)
+all_wted_indicators$d08 <- as.numeric(all_wted_indicators$d08)
+all_wted_indicators$d09 <- as.numeric(all_wted_indicators$d09)
+all_wted_indicators$d10 <- as.numeric(all_wted_indicators$d10)
+
+saveRDS(all_wted_indicators, "_data/all_wted_indicators.rds")
+```
+
+<br>
+
+###  Compute adequacy scores
+> Note that the aggregated values are in column `eiw`
+
+```{r}
+all_wted_indicators_eiw <- all_wted_indicators
+all_wted_indicators_eiw$eiw <- round(rowSums(all_wted_indicators),3)
+all_wted_indicators_eiw
+
+saveRDS(all_wted_indicators_eiw, "_data/all_wted_indicators_eiw.rds")
+```
+
+### Plotting weighted scores
+```{r}
+all_wted_indicators_eiw <- readRDS("_data/all_wted_indicators_eiw.rds")
+
+### Add metadata
+tidyID <- readRDS("_data/tidyID.rds")
+all_wted_indicators_eiw_var <- cbind(tidyID, all_wted_indicators_eiw)
+saveRDS(all_wted_indicators_eiw_var, "_data/all_wted_indicators_eiw_var.rds")
+
+k01 = 0.1
+k02 = 0.2
+k03 = 0.3
+k04 = 0.4
+k05 = 0.5
+k06 = 0.6
+k07 = 0.7
+k08 = 0.8
+k09 = 0.9
+k10 = 1
+
+P1k01 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k01 & Phase == "P1"))
+P1k02 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k02 & Phase == "P1"))
+P1k03 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k03 & Phase == "P1"))
+P1k04 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k04 & Phase == "P1"))
+P1k05 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k05 & Phase == "P1"))
+P1k06 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k06 & Phase == "P1"))
+P1k07 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k07 & Phase == "P1"))
+P1k08 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k08 & Phase == "P1"))
+P1k09 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k09 & Phase == "P1"))
+P1k10 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k10 & Phase == "P1"))
+
+CountP1 <- rbind(P1k01, P1k02, P1k03, P1k04, P1k05, P1k06, P1k07, P1k08, P1k09, P1k10)
+
+P2k01 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k01 & Phase == "P2"))
+P2k02 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k02 & Phase == "P2"))
+P2k03 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k03 & Phase == "P2"))
+P2k04 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k04 & Phase == "P2"))
+P2k05 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k05 & Phase == "P2"))
+P2k06 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k06 & Phase == "P2"))
+P2k07 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k07 & Phase == "P2"))
+P2k08 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k08 & Phase == "P2"))
+P2k09 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k09 & Phase == "P2"))
+P2k10 <- dim(all_wted_indicators_eiw_var %>% filter(eiw >= k10 & Phase == "P2"))
+
+
+CountP2 <- rbind(P2k01, P2k02, P2k03, P2k04, P2k05, P2k06, P2k07, P2k08, P2k09, P2k10)
+
+Cutoff <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+dimdf <- data.frame(Cutoff, CountP1[, 1], CountP2[, 1])
+colnames(dimdf) <- c("Cutoff", "Phase1", "Phase2")
+rownames(dimdf) <- NULL
+
+df1 <- dimdf %>% mutate(Phase_1 = round(Phase1/71, 2))
+df2 <- df1 %>% mutate(Phase_2 = round(Phase2/53, 2))
+
+achieveTable1 <- df2 %>% select(Cutoff, Phase1, Phase_1, Phase2, Phase_2)
+achieveTable1$Cutoff <- as.integer(achieveTable1$Cutoff)
+
+library(tidyr)
+P <- achieveTable1 %>% select(Cutoff, Phase_1, Phase_2) %>% gather(key = "Percentage", value = "value", Phase_1, Phase_2, -Cutoff) %>% 
+  ggplot(aes(x = Cutoff, y = value, color = Percentage)) +
+  geom_point(size =3) +
+  geom_line(size = 1) + 
+  labs(x = "Number of Indicators", y = "Respondent's Weighted \nAdequate Achivement", title = "", color = "Survey Phase") + 
+  theme_bw() + 
+  scale_x_continuous(breaks = c(1 ,2, 3, 4, 5, 6, 7, 8, 9, 10)) +
+  scale_y_continuous(labels = scales::percent)
+
+p <- P + annotate("rect", xmin = 4, xmax = 10, ymin = 0, ymax = 100, 
+           alpha = .5, fill = "#ddddee")
+P + annotate("rect", xmin = 8, xmax = 10, ymin = 0, ymax = 1, 
+           alpha = .5, fill = "#cccfff")
+
+```
+
+<br>
+<hr>
+
+## Inadequacy Censored Matrix
+```{block, type="tmbinfo", echo = TRUE}
+
+* Transform indicators with:
+  * 1 if an respondent has inadequate achievements
+  * 0 if an respondent has adequate achievements
+  * NAs are auto-generated if the respondent’s response is missing
+
+* Save as new respondent-level data file as all_depr_indicators.rds
+```
+
+
+<br>
+<br>
+
+<!-- ### Unweighted censored matrix -->
+```{r}
+all_indicators <- readRDS("_data/all_indicators.rds")
+all_depr_indicators <- all_indicators
+
+#Build all_depr_indicators
+all_depr_indicators$d01[all_indicators$d01 == 0 ] <- 1
+all_depr_indicators$d01[all_indicators$d01 == 1 ] <- 0
+all_depr_indicators$d02[all_indicators$d02 == 0 ] <- 1
+all_depr_indicators$d02[all_indicators$d02 == 1 ] <- 0
+all_depr_indicators$d03[all_indicators$d03 == 0 ] <- 1
+all_depr_indicators$d03[all_indicators$d03 == 1 ] <- 0
+all_depr_indicators$d04[all_indicators$d04 == 0 ] <- 1
+all_depr_indicators$d04[all_indicators$d04 == 1 ] <- 0
+all_depr_indicators$d05[all_indicators$d05 == 0 ] <- 1
+all_depr_indicators$d05[all_indicators$d05 == 1 ] <- 0
+all_depr_indicators$d06[all_indicators$d06 == 0 ] <- 1
+all_depr_indicators$d06[all_indicators$d06 == 1 ] <- 0
+all_depr_indicators$d07[all_indicators$d07 == 0 ] <- 1
+all_depr_indicators$d07[all_indicators$d07 == 1 ] <- 0
+all_depr_indicators$d08[all_indicators$d08 == 0 ] <- 1
+all_depr_indicators$d08[all_indicators$d08 == 1 ] <- 0
+all_depr_indicators$d09[all_indicators$d09 == 0 ] <- 1
+all_depr_indicators$d09[all_indicators$d09 == 1 ] <- 0
+all_depr_indicators$d10[all_indicators$d10 == 0 ] <- 1
+all_depr_indicators$d10[all_indicators$d10 == 1 ] <- 0
+
+all_depr_indicators$d01 <- as.numeric(all_depr_indicators$d01)
+all_depr_indicators$d02 <- as.numeric(all_depr_indicators$d02)
+all_depr_indicators$d03 <- as.numeric(all_depr_indicators$d03)
+all_depr_indicators$d04 <- as.numeric(all_depr_indicators$d04)
+all_depr_indicators$d05 <- as.numeric(all_depr_indicators$d05)
+all_depr_indicators$d06 <- as.numeric(all_depr_indicators$d06)
+all_depr_indicators$d07 <- as.numeric(all_depr_indicators$d07)
+all_depr_indicators$d08 <- as.numeric(all_depr_indicators$d08)
+all_depr_indicators$d09 <- as.numeric(all_depr_indicators$d09)
+all_depr_indicators$d10 <- as.numeric(all_depr_indicators$d10)
+
+all_depr_indicators
+
+saveRDS(all_depr_indicators, "_data/all_depr_indicators.rds")
+```
+
+
+
+<!-- <br> -->
+
+<!-- ###  Aggregated unweighted inadequacy -->
+<!-- > Note that the aggregated values are in column `ci` -->
+
+```{r}
+all_depr_indicators_ci <- all_depr_indicators
+all_depr_indicators_ci$ci <- rowSums(all_depr_indicators)
+all_depr_indicators_ci
+
+saveRDS(all_depr_indicators_ci, "_data/all_depr_indicators_ci.rds")
+```
+
+
+<br>
+<br>
+
+##  Compute Weighted Inadequacy Scores
+
+
+```{block, type="tmbinfo", echo = TRUE}
+> Note that the computed inadequacy scores are in column `ciw`
+
+* Apply indicator weights
+* Sum up the weighted inadequacies scores for each respondent (ciw).
+* The inadequacy score for each person must lie between 0 and 1.
+* The score increases as the number of inadequacies of the respondents increases.
+* The score reaches maximum of 1 when the respondent experiences inadequacy on all indicators. 
+* An respondent who has no inadequacy on any indicator receives a score equal to 0. 
+```
+
+### Weighted censored matrix
+
+```{r}
+all_depr_indicators <- readRDS("_data/all_depr_indicators.rds")
+
+all_depr_wted_indicators <- all_depr_indicators
+
+#Build all_depr_wted_indicators.rds
+all_depr_wted_indicators$d01 <- (all_depr_indicators$d01) * w01
+all_depr_wted_indicators$d02 <- (all_depr_indicators$d02) * w02
+all_depr_wted_indicators$d03 <- (all_depr_indicators$d03) * w03
+all_depr_wted_indicators$d04 <- (all_depr_indicators$d04) * w04
+all_depr_wted_indicators$d05 <- (all_depr_indicators$d05) * w05
+all_depr_wted_indicators$d06 <- (all_depr_indicators$d06) * w06
+all_depr_wted_indicators$d07 <- (all_depr_indicators$d07) * w03
+all_depr_wted_indicators$d08 <- (all_depr_indicators$d08) * w04
+all_depr_wted_indicators$d09 <- (all_depr_indicators$d09) * w05
+all_depr_wted_indicators$d10 <- (all_depr_indicators$d10) * w10
+
+
+all_depr_wted_indicators$d01 <- as.numeric(all_depr_wted_indicators$d01)
+all_depr_wted_indicators$d02 <- as.numeric(all_depr_wted_indicators$d02)
+all_depr_wted_indicators$d03 <- as.numeric(all_depr_wted_indicators$d03)
+all_depr_wted_indicators$d04 <- as.numeric(all_depr_wted_indicators$d04)
+all_depr_wted_indicators$d05 <- as.numeric(all_depr_wted_indicators$d05)
+all_depr_wted_indicators$d06 <- as.numeric(all_depr_wted_indicators$d06)
+all_depr_wted_indicators$d07 <- as.numeric(all_depr_wted_indicators$d07)
+all_depr_wted_indicators$d08 <- as.numeric(all_depr_wted_indicators$d08)
+all_depr_wted_indicators$d09 <- as.numeric(all_depr_wted_indicators$d09)
+all_depr_wted_indicators$d10 <- as.numeric(all_depr_wted_indicators$d10)
+
+saveRDS(all_depr_wted_indicators, "_data/all_depr_wted_indicators.rds")
+
+```
+
+<br>
+
+
+![ci inadequacy score](_figs/ci.png)
+
+Note that in WEAI indicators = 10
+
+Note that in A-WEAI indicators = 6
+
+Note that in pro-WEAI indicators = 12
+```{r}
+all_depr_wted_indicators <- readRDS("_data/all_depr_wted_indicators.rds")
+all_depr_wted_indicators_ciw <- all_depr_wted_indicators
+all_depr_wted_indicators_ciw$ci <- round(rowSums(all_depr_wted_indicators),3)
+all_depr_wted_indicators_ciw
+
+saveRDS(all_depr_wted_indicators_ciw, "_data/all_depr_wted_indicators_ciw.rds")
+
+### Add metadata
+tidyID <- readRDS("_data/tidyID.rds")
+all_depr_wted_indicators_ciw_var <- cbind(tidyID, all_depr_wted_indicators_ciw)
+saveRDS(all_depr_wted_indicators_ciw_var, "_data/all_depr_wted_indicators_ciw_var.rds")
+
+```
+
+### Plotting censored scores
+```{r}
+all_wted_indicators_eiw_var <- readRDS("_data/all_depr_wted_indicators_ciw_var.rds")
+
+k01 = 0.1
+k02 = 0.2
+k03 = 0.3
+k04 = 0.4
+k05 = 0.5
+k06 = 0.6
+k07 = 0.7
+k08 = 0.8
+k09 = 0.9
+k10 = 1
+
+P1k01 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k01 & Phase == "P1"))
+P1k02 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k02 & Phase == "P1"))
+P1k03 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k03 & Phase == "P1"))
+P1k04 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k04 & Phase == "P1"))
+P1k05 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k05 & Phase == "P1"))
+P1k06 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k06 & Phase == "P1"))
+P1k07 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k07 & Phase == "P1"))
+P1k08 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k08 & Phase == "P1"))
+P1k09 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k09 & Phase == "P1"))
+P1k10 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k10 & Phase == "P1"))
+
+CountP1 <- rbind(P1k01, P1k02, P1k03, P1k04, P1k05, P1k06, P1k07, P1k08, P1k09, P1k10)
+
+P2k01 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k01 & Phase == "P2"))
+P2k02 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k02 & Phase == "P2"))
+P2k03 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k03 & Phase == "P2"))
+P2k04 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k04 & Phase == "P2"))
+P2k05 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k05 & Phase == "P2"))
+P2k06 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k06 & Phase == "P2"))
+P2k07 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k07 & Phase == "P2"))
+P2k08 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k08 & Phase == "P2"))
+P2k09 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k09 & Phase == "P2"))
+P2k10 <- dim(all_wted_indicators_eiw_var %>% filter(ci<= k10 & Phase == "P2"))
+
+
+CountP2 <- rbind(P2k01, P2k02, P2k03, P2k04, P2k05, P2k06, P2k07, P2k08, P2k09, P2k10)
+
+Cutoff <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+dimdf <- data.frame(Cutoff, CountP1[, 1], CountP2[, 1])
+colnames(dimdf) <- c("Cutoff", "Phase1", "Phase2")
+rownames(dimdf) <- NULL
+
+df1 <- dimdf %>% mutate(Phase_1 = round(Phase1/71, 2))
+df2 <- df1 %>% mutate(Phase_2 = round(Phase2/53, 2))
+
+achieveTable1 <- df2 %>% select(Cutoff, Phase1, Phase_1, Phase2, Phase_2)
+achieveTable1$Cutoff <- as.integer(achieveTable1$Cutoff)
+
+library(tidyr)
+P <- achieveTable1 %>% select(Cutoff, Phase_1, Phase_2) %>% gather(key = "Percentage", value = "value", Phase_1, Phase_2, -Cutoff) %>% 
+  ggplot(aes(x = Cutoff, y = value, color = Percentage)) +
+  geom_point(size =3) +
+  geom_line(size = 1) + 
+  labs(x = "Number of Indicators", y = "Respondent's Weighted \nInadequate Achivement", title = "", color = "Survey Phase") + 
+  theme_bw() + 
+  scale_x_continuous(breaks = c(0, 1 ,2, 3, 4, 5, 6, 7, 8, 9, 10)) +
+  scale_y_continuous(labels = scales::percent)
+
+P + annotate("rect", xmin = 2, xmax = 10, ymin = 0, ymax = 1., 
+           alpha = .5, fill = "#ff5555") +
+ annotate("rect", xmin = 0, xmax = 2, ymin = 0, ymax = 1, 
+           alpha = .5, fill = "#00ff00")  +
+  annotate("text", x=1, y=0.1, label= "Empowered\n(ci ≤ 20%)") + 
+  annotate("text", x = 8, y=0.1, label = "Disempowered\n(ci > 20%)")
+
+```
+
+
