@@ -39,11 +39,15 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
+*.yml
+*.css
+*.log
 *_data/
 *_figs/
 *_docs/
 *docs/
 *library/
 *_book/
+*top-n*
 *REFER/
 *HERSEABOOK/
